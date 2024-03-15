@@ -1,0 +1,15 @@
+version: 0.0.0+1
+env: "development"
+
+database:
+  conn_string: "postgres://maxucks@localhost:5432/wildb-dev?sslmode=disable"
+
+server:
+  addr: "localhost:8000"
+  read_timeout: 10
+  write_timeout: 10
+  idle_timeout: 120
+
+auth:
+  access_token_ttl: 1440
+  refresh_token_ttl: 43800
