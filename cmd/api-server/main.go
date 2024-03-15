@@ -1,8 +1,21 @@
 package main
 
-import "temp/internal/app"
+import (
+	"flag"
+	"temp/internal/app"
+)
+
+var configPath string
+
+func init() {
+	flag.StringVar(&configPath, "cfg", "", "location of the config.yaml file")
+}
 
 func main() {
-	app := app.New()
-	app.Run()
+	flag.Parse()
+
+	a := app.New()
+	a.Run(&app.AppFlags{
+		ConfigPath: configPath,
+	})
 }

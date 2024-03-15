@@ -1,4 +1,4 @@
-package app
+package m
 
 type Response struct {
 	Result interface{} `json:"result"`
