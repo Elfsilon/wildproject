@@ -4,19 +4,15 @@ import (
 	"flag"
 	"log"
 	"temp/internal/app"
+	"temp/pkg/env"
 
 	"github.com/joho/godotenv"
 )
 
-var configPath string
-
-func init() {
-	flag.StringVar(&configPath, "cfg", "", "location of the config.yaml file")
-}
-
 func main() {
 	flag.Parse()
 
+	configPath := env.String("CONFIG_PATH")
 	if err := godotenv.Load(configPath); err != nil {
 		log.Fatal(err)
 	}

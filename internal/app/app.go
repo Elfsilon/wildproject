@@ -32,6 +32,7 @@ func (a *App) Init(f *AppFlags) {
 }
 
 func (a *App) Run(f *AppFlags) {
+	log.Info("Initializing app")
 	a.Init(f)
 
 	app := fiber.New(fiber.Config{
@@ -40,8 +41,13 @@ func (a *App) Run(f *AppFlags) {
 		IdleTimeout:  a.cfg.Server.IdleTimeout,
 	})
 
+	log.Info("Setting up router")
 	r := router.NewRouter(app, a.cfg)
 	r.Setup()
 
-	app.Listen(a.cfg.Server.Addr)
+	log.Info("Running up server")
+	if err := app.Listen(a.cfg.Server.Addr); err != nil {
+		log.Error(err)
+	}
+	log.Info("Shut down server")
 }
