@@ -1,6 +1,7 @@
 package app
 
 import (
+	db "temp/internal/app/database"
 	m "temp/internal/app/models"
 	"temp/internal/app/router"
 
@@ -41,9 +42,17 @@ func (a *App) Run(f *AppFlags) {
 		IdleTimeout:  a.cfg.Server.IdleTimeout,
 	})
 
+	log.Info("Establishing database connection")
+	log.Infof("conn: %v", a.cfg.Database.Conn)
+	database := db.NewDatabase()
+	if err := database.Open(a.cfg.Database.Conn); err != nil {
+		log.Fatal(err)
+	}
+	defer database.Close()
+
 	log.Info("Setting up router")
 	r := router.NewRouter(app, a.cfg)
-	r.Setup()
+	r.Setup(database)
 
 	log.Info("Running up server")
 	if err := app.Listen(a.cfg.Server.Addr); err != nil {
