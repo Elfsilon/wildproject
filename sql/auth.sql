@@ -1,13 +1,4 @@
-DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS user_roles;
-
-CREATE TABLE users (
-  user_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  email text NOT NULL UNIQUE,
-  password_hash text NOT NULL,
-  created_at timestamp with time zone NOT NULL DEFAULT current_timestamp,
-  updated_at timestamp with time zone NOT NULL DEFAULT current_timestamp
-);
+DROP TABLE IF EXISTS refresh_sessions;
 
 CREATE TABLE refresh_sessions (
   refresh_token uuid PRIMARY KEY DEFAULT gen_random_uuid(),
