@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	m "temp/internal/app/models"
 	rep "temp/internal/app/repositories"
 	tokenmanager "temp/internal/app/token-manager"
@@ -15,11 +16,19 @@ import (
 )
 
 var (
-	ErrWrongEmailOrPassword = fiber.NewError(fiber.StatusInternalServerError, "wrong email or password")
+	ErrInvalidSessionID     = fiber.NewError(fiber.StatusBadRequest, "invalid session_id")
+	ErrInvalidSession       = fiber.NewError(fiber.StatusBadRequest, "invalid locals session")
+	ErrInvalidDevice        = fiber.NewError(fiber.StatusBadRequest, "invalid locals device_info")
+	ErrInvalidTokenData     = fiber.NewError(fiber.StatusBadRequest, "invalid token_data")
+	ErrInvalidAccessToken   = fiber.NewError(fiber.StatusBadRequest, "invalid access_token")
+	ErrWrongEmailOrPassword = fiber.NewError(fiber.StatusBadRequest, "wrong email or password")
 	ErrMismatchCurrentUser  = fiber.NewError(fiber.StatusInternalServerError, "current_user mismatches type of User")
 	ErrAlreadyAuthorized    = fiber.NewError(fiber.StatusConflict, "passed token is valid and so user is already authorized")
 	ErrUserAgentNotPassed   = fiber.NewError(fiber.StatusBadRequest, "User-Agent header is required")
 	ErrFingerprintNotPassed = fiber.NewError(fiber.StatusBadRequest, "X-Fingerprint header is required")
+	ErrUnknownRefreshToken  = fiber.NewError(fiber.StatusNotFound, "unknown refresh token was used, your session dropped")
+	ErrExpiredRefreshToken  = fiber.NewError(fiber.StatusNotFound, "refresh token is expired, your session dropped")
+	ErrSessionNotFound      = fiber.NewError(fiber.StatusNotFound, "session not found")
 )
 
 type Sessions struct {
@@ -38,6 +47,28 @@ func NewSessions(
 	return &Sessions{cfg, r, ur, tm}
 }
 
+func (s *Sessions) Get(c *fiber.Ctx) error {
+	sessionID, err := strconv.Atoi(c.Params("session_id"))
+	if err != nil {
+		return ErrInvalidSessionID
+	}
+
+	session, err := s.r.FindBySessionID(sessionID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrSessionNotFound
+		}
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(m.ClientRefreshSession{
+		SessionID: session.SessionID,
+		Uagent:    session.Uagent,
+		ExpiresAt: session.ExpiresAt,
+		CreatedAt: session.CreatedAt,
+	})
+}
+
 // Get all active user's refresh sessions
 func (s *Sessions) GetAllByUserID(c *fiber.Ctx) error {
 	userID := c.Params("user_id")
@@ -50,10 +81,43 @@ func (s *Sessions) GetAllByUserID(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
+	res := make([]m.ClientRefreshSession, 0)
+	for _, s := range sessions {
+		res = append(res, m.ClientRefreshSession{
+			SessionID: s.SessionID,
+			Uagent:    s.Uagent,
+			ExpiresAt: s.ExpiresAt,
+			CreatedAt: s.CreatedAt,
+		})
+	}
+
 	return c.JSON(struct {
-		Sessions []m.RefreshSession `json:"sessions"`
+		Sessions []m.ClientRefreshSession `json:"sessions"`
 	}{
-		Sessions: sessions,
+		Sessions: res,
+	})
+}
+
+func (s *Sessions) generateTokens(c *fiber.Ctx, userID, uagent, fprint string) error {
+	rTokenExriresAt := time.Now().Add(s.cfg.RefreshTokenTTL).UTC()
+	sessionID, refreshToken, err := s.r.Create(userID, uagent, fprint, rTokenExriresAt)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	accessToken, err := s.tm.Generate(sessionID, userID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	err = s.r.SetAccessToken(sessionID, accessToken)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(m.Tokens{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 	})
 }
 
@@ -111,15 +175,14 @@ func (s *Sessions) New(c *fiber.Ctx) error {
 		return ErrFingerprintNotPassed
 	}
 
-	sessionIDs, err := s.r.FindByDevice(userID, uagent, fprint)
+	deviceSessions, err := s.r.FindByDevice(userID, uagent, fprint)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	log.Infof("dropping sessions: %v", sessionIDs)
-	if sessionIDs != nil && len(sessionIDs) > 0 {
+	if deviceSessions != nil && len(deviceSessions) > 0 {
 		// Try to delete sessions with this device
-		for _, sessionID := range sessionIDs {
+		for _, sessionID := range deviceSessions {
 			if err := s.r.Drop(sessionID); err != nil {
 				// TODO: Figure out what to do
 				continue
@@ -129,47 +192,68 @@ func (s *Sessions) New(c *fiber.Ctx) error {
 		// TODO: push notification: New device login detected
 	}
 
-	// Generate new refresh session
-	rTokenExriresAt := time.Now().Add(s.cfg.RefreshTokenTTL).UTC()
-	sessionID, refreshToken, err := s.r.Create(userID, uagent, fprint, rTokenExriresAt)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
-	}
-
-	accessToken, err := s.tm.Generate(sessionID, userID)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
-	}
-
-	err = s.r.SetAccessToken(sessionID, accessToken)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
-	}
-
-	return c.JSON(m.Tokens{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-	})
+	return s.generateTokens(c, userID, uagent, fprint)
 }
 
 // Generates a new pair of resfresh + access tokens by valid refresh token
 func (s *Sessions) Refresh(c *fiber.Ctx) error {
-	// Need: access_token, refresh_token, user_agent, fingerprint
-	//
-	// Checks that old access token matches the one from saved session
-	//	 If not: drops session and sends "unknown access token was used, your session dropped"
-	// Checks that old device is used
-	//   If not: drops session and sends "not associated with refresh token device used, your session dropped"
-	// Removes old session
-	// Created new session
+	userID := c.Params("user_id")
+	if userID == "" {
+		return ErrUserIDNotPassed
+	}
 
-	return fiber.ErrNotImplemented
+	var payload struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+
+	if err := c.BodyParser(&payload); err != nil {
+		message := fmt.Sprintf("invalid body: %s", err)
+		return fiber.NewError(fiber.StatusBadRequest, message)
+	}
+
+	oldSession, ok := c.Locals("session").(m.RefreshSession)
+	if !ok {
+		return ErrInvalidSession
+	}
+
+	device, ok := c.Locals("device_info").(m.DeviceInfo)
+	if !ok {
+		return ErrInvalidDevice
+	}
+
+	s.r.Drop(oldSession.SessionID)
+
+	if payload.RefreshToken != oldSession.RefreshToken {
+		return ErrUnknownRefreshToken
+	}
+
+	expiresAt := time.Time(oldSession.ExpiresAt).UTC()
+	now := time.Now().UTC()
+
+	log.Infof("now: %v", now.Format(time.RFC822Z))
+	log.Infof("expires: %v", expiresAt.Format(time.RFC822Z))
+	log.Infof("expired?: %v", now.After(expiresAt))
+
+	if now.After(expiresAt) {
+		return ErrExpiredRefreshToken
+	}
+
+	return s.generateTokens(c, userID, device.Uagent, device.Fprint)
 }
 
-// Drops specidied user's refresh session
+// Drops specified user's refresh session
 func (s *Sessions) Drop(c *fiber.Ctx) error {
+	sessionID, err := strconv.Atoi(c.Params("session_id"))
+	if err != nil {
+		return ErrInvalidSessionID
+	}
+
+	if err := s.r.Drop(sessionID); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
 	// Need session id
-	return fiber.ErrNotImplemented
+	return c.SendStatus(fiber.StatusOK)
 }
 
 // Drops all user's refresh sessions (equivalent to logout)

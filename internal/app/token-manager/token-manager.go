@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	m "temp/internal/app/models"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -40,8 +41,8 @@ func (tm *TokenManager) Generate(sessionID int, userID string) (string, error) {
 	return jwtToken.SignedString(tm.secret)
 }
 
-func (tm *TokenManager) Validate(accessToken string) (int, string, error) {
-	validator := func(t *jwt.Token) (interface{}, error) {
+func (tm *TokenManager) getValidateFn() func(t *jwt.Token) (interface{}, error) {
+	return func(t *jwt.Token) (interface{}, error) {
 		_, ok := t.Method.(*jwt.SigningMethodHMAC)
 		if !ok {
 			return nil, ErrInvalidSigningMethod
@@ -49,29 +50,51 @@ func (tm *TokenManager) Validate(accessToken string) (int, string, error) {
 
 		return tm.secret, nil
 	}
+}
 
+func (tm *TokenManager) Validate(accessToken string) (m.TokenData, error) {
 	var claims jwt.RegisteredClaims
 
-	_, err := jwt.ParseWithClaims(accessToken, &claims, validator)
+	_, err := jwt.ParseWithClaims(accessToken, &claims, tm.getValidateFn())
 	if err != nil {
-		return -1, "", err
+		return m.TokenData{}, err
 	}
 
+	return tm.ParseClaims(claims)
+}
+
+// Retrieves token claims ignoring validation except of wrong signing method
+func (tm *TokenManager) GetClaims(accessToken string) (m.TokenData, error) {
+	var claims jwt.RegisteredClaims
+
+	_, err := jwt.ParseWithClaims(accessToken, &claims, tm.getValidateFn())
+	if err != nil && errors.Is(err, ErrInvalidSigningMethod) {
+		return m.TokenData{}, err
+	}
+
+	return tm.ParseClaims(claims)
+}
+
+func (tm *TokenManager) ParseClaims(claims jwt.RegisteredClaims) (m.TokenData, error) {
 	rawSessionID := claims.ID
 	if rawSessionID == "" {
-		return -1, "", ErrClaimsEmptySessionID
+		return m.TokenData{}, ErrClaimsEmptySessionID
 	}
 
 	sessionID, err := strconv.Atoi(rawSessionID)
 	if err != nil {
-		return -1, "", ErrClaimsInvalidSessionID
+		return m.TokenData{}, ErrClaimsInvalidSessionID
 	}
 
 	userID := claims.Subject
 	if userID == "" {
-		return -1, "", ErrClaimsEmptyUserID
+		return m.TokenData{}, ErrClaimsEmptyUserID
 	}
 
-	return sessionID, userID, nil
+	data := m.TokenData{
+		SessionID: sessionID,
+		UserID:    userID,
+	}
 
+	return data, nil
 }
