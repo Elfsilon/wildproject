@@ -9,7 +9,6 @@ import (
 	tokenmanager "temp/internal/app/token-manager"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/log"
 )
 
 var (
@@ -110,8 +109,6 @@ func (a *AuthGuard) validate(
 	if err != nil {
 		return fiber.NewError(fiber.StatusUnauthorized, err.Error())
 	}
-
-	log.Infof("Token data %#v", tokenData)
 
 	err = a.validateSessionAndDevice(c, accessToken, tokenData.SessionID)
 	if err != nil {
