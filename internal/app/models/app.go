@@ -40,6 +40,7 @@ type ServerConfig struct {
 }
 
 type AuthConfig struct {
+	AuthJwtSecret   []byte
 	AccessTokenTTL  time.Duration
 	RefreshTokenTTL time.Duration
 }
