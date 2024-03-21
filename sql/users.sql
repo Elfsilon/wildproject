@@ -29,4 +29,21 @@ CREATE TABLE user_info (
   name varchar(200) DEFAULT ''
 );
 
+-- CREATE TABLE user_role (
+--   role_id smallserial PRIMARY KEY,
+--   label varchar(16) NOT NULL UNIQUE
+-- );
+
+-- CREATE TABLE users_role (
+--   user_id uuid PRIMARY KEY 
+--     REFERENCES users (user_id)
+--       ON UPDATE CASCADE
+--       ON DELETE CASCADE,
+--   sex_id smallint DEFAULT 1 
+--     REFERENCES sex (sex_id)
+--       ON UPDATE CASCADE
+--       ON DELETE SET DEFAULT,
+--   name varchar(200) DEFAULT ''
+-- );
+
 INSERT INTO sex (label) VALUES ('Не установлен'), ('Мужской'), ('Женский');

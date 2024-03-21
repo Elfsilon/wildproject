@@ -17,6 +17,7 @@ func loadConfigFromEnv() (*m.Config, error) {
 	writeTimeout := env.Int("SERVER_WRITE_TIMEOUT")
 	idleTimeout := env.Int("SERVER_IDLE_TIMEOUT")
 
+	authJwtSecret := env.String("AUTH_JWT_SECRET")
 	accessTokenTTL := env.Int("AUTH_ACCESS_TOKEN_TTL")
 	refreshTokenTTL := env.Int("AUTH_REFRESH_TOKEN_TTL")
 
@@ -33,6 +34,7 @@ func loadConfigFromEnv() (*m.Config, error) {
 			IdleTimeout:  time.Duration(idleTimeout) * time.Second,
 		},
 		Auth: m.AuthConfig{
+			AuthJwtSecret:   []byte(authJwtSecret),
 			AccessTokenTTL:  time.Duration(accessTokenTTL) * time.Minute,
 			RefreshTokenTTL: time.Duration(refreshTokenTTL) * time.Minute,
 		},

@@ -1,17 +1,28 @@
 package m
 
-type User struct {
-	ID    string `json:"user_id"`
-	Email string `json:"email"`
-	TimeFields
-}
+type (
+	User struct {
+		ID    string `json:"user_id"`
+		Email string `json:"email"`
+	}
 
-type UserInfo struct {
-	Name string `json:"name,omitempty"`
-	Sex  int    `json:"sex,omitempty"`
-}
+	UserWithTimeFields struct {
+		User
+		TimeFields
+	}
 
-type UserDetailed struct {
-	User
-	UserInfo
-}
+	UserInfo struct {
+		Name string `json:"name,omitempty"`
+		Sex  int    `json:"sex,omitempty"`
+	}
+
+	UserDetailed struct {
+		UserWithTimeFields
+		UserInfo
+	}
+
+	UserCredentials struct {
+		Email        string
+		PasswordHash string
+	}
+)

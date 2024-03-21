@@ -25,7 +25,7 @@ func (u *Users) GetDetailed(userID string) (m.UserDetailed, error) {
 	if err != nil {
 		return m.UserDetailed{}, err
 	}
-	detailed := m.UserDetailed{User: user}
+	detailed := m.UserDetailed{UserWithTimeFields: user}
 
 	query := `
 		SELECT name, sex_id
@@ -103,40 +103,59 @@ func (u *Users) ChangeEmail(userID, email string) error {
 	return fiber.ErrNotImplemented
 }
 
-func (u *Users) findByID(userID string) (m.User, error) {
+func (u *Users) findByID(userID string) (m.UserWithTimeFields, error) {
 	query := `
 		SELECT user_id, email, created_at, updated_at
 		FROM users 
 		WHERE user_id = $1;
 	`
-	var user m.User
+	var user m.UserWithTimeFields
 
 	err := u.db.QueryRow(query, userID).Scan(
 		&user.ID, &user.Email, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {
-		return m.User{}, err
+		return m.UserWithTimeFields{}, err
 	}
 
 	return user, nil
 }
 
-func (u *Users) findByEmail(email string) (m.User, error) {
+func (u *Users) findByEmail(email string) (m.UserWithTimeFields, error) {
 	query := `
 		SELECT user_id, email, created_at, updated_at
 		FROM users 
 		WHERE email = $1;
 	`
-	var user m.User
+	var user m.UserWithTimeFields
 
 	err := u.db.QueryRow(query, email).Scan(
 		&user.ID, &user.Email, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {
-		return m.User{}, err
+		return m.UserWithTimeFields{}, err
 	}
 
 	return user, nil
+}
+
+func (u *Users) FindCredentialsByEmail(email string) (string, m.UserCredentials, error) {
+	query := `
+		SELECT user_id, email, password_hash
+		FROM users 
+		WHERE email = $1;
+	`
+	var userID string
+	var credentials m.UserCredentials
+
+	err := u.db.QueryRow(query, email).Scan(
+		&userID, &credentials.Email, &credentials.PasswordHash,
+	)
+	if err != nil {
+		return "", m.UserCredentials{}, err
+	}
+
+	return userID, credentials, nil
 }
 
 func (u *Users) countByEmail(email string) (int, error) {
