@@ -16,6 +16,7 @@ CREATE TABLE refresh_sessions (
 );
 
 SELECT * FROM users;
+delete from users;
 SELECT * FROM refresh_sessions;
 
 INSERT INTO refresh_sessions(user_id, user_agent, fingerprint, expires_at) VALUES ();

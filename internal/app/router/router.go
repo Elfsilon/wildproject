@@ -71,7 +71,7 @@ func (r *Router) Setup(db *db.Database) error {
 		return err
 	}
 	log.Info("Setting up app routes")
-	authGuard := NewAuthGuard(c.Services.TokenManager)
+	authGuard := NewAuthGuard(c.Services.TokenManager, c.Repositories.Sessions)
 
 	api := r.app.Group("/api")
 	api.Get("/health", ctr.HealthCheck)
@@ -86,10 +86,10 @@ func (r *Router) Setup(db *db.Database) error {
 
 	unSessions := unUser.Group("/sessions")
 	unSessions.Post("/", c.Controllers.Sessions.New)
-	unSessions.Put("/", c.Controllers.Sessions.Refresh)
+	unSessions.Put("/", authGuard.RefreshGuard, c.Controllers.Sessions.Refresh)
 
 	// Protected routes
-	protected := v1.Group("/protected", authGuard.ValidateToken)
+	protected := v1.Group("/protected", authGuard.AccessGuard)
 
 	users := protected.Group("/users")
 
@@ -101,6 +101,7 @@ func (r *Router) Setup(db *db.Database) error {
 	sessions := user.Group("/sessions")
 	sessions.Get("/", c.Controllers.Sessions.GetAllByUserID)
 	sessions.Delete("/", c.Controllers.Sessions.DropAll)
+	sessions.Get("/:session_id<int>/", c.Controllers.Sessions.Get)
 	sessions.Delete("/:session_id<int>/", c.Controllers.Sessions.Drop)
 
 	return nil

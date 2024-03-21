@@ -2,6 +2,7 @@ package rep
 
 import (
 	"database/sql"
+	"errors"
 	m "temp/internal/app/models"
 	"time"
 
@@ -50,13 +51,17 @@ func (s *Sessions) FindByUserID(userID string) ([]m.RefreshSession, error) {
 		FROM refresh_sessions 
 		WHERE user_id = $1;
 	`
-	sessions := make([]m.RefreshSession, 0)
 
 	rows, err := s.db.Query(query, userID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return []m.RefreshSession{}, nil
+		}
 		return nil, err
 	}
 	defer rows.Close()
+
+	sessions := make([]m.RefreshSession, 0)
 
 	for rows.Next() {
 		var session m.RefreshSession
@@ -69,6 +74,28 @@ func (s *Sessions) FindByUserID(userID string) ([]m.RefreshSession, error) {
 	}
 
 	return sessions, nil
+}
+
+func (s *Sessions) FindBySessionID(sessionID int) (m.RefreshSession, error) {
+	query := `
+		SELECT 
+			session_id, refresh_token, access_token, user_id, 
+			user_agent, fingerprint, expires_at, created_at
+		FROM refresh_sessions 
+		WHERE session_id = $1;
+	`
+	var session m.RefreshSession
+
+	err := s.db.QueryRow(query, sessionID).Scan(
+		&session.SessionID, &session.RefreshToken, &session.AccessToken, &session.UserID,
+		&session.Uagent, &session.Fprint, &session.ExpiresAt, &session.CreatedAt,
+	)
+
+	if err != nil {
+		return m.RefreshSession{}, err
+	}
+
+	return session, nil
 }
 
 func (s *Sessions) Create(
