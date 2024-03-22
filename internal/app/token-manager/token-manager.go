@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	m "temp/internal/app/models"
+	model "temp/internal/app/domain/models"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -52,46 +52,46 @@ func (tm *TokenManager) getValidateFn() func(t *jwt.Token) (interface{}, error) 
 	}
 }
 
-func (tm *TokenManager) Validate(accessToken string) (m.TokenData, error) {
+func (tm *TokenManager) Validate(accessToken string) (model.TokenData, error) {
 	var claims jwt.RegisteredClaims
 
 	_, err := jwt.ParseWithClaims(accessToken, &claims, tm.getValidateFn())
 	if err != nil {
-		return m.TokenData{}, err
+		return model.TokenData{}, err
 	}
 
 	return tm.ParseClaims(claims)
 }
 
 // Retrieves token claims ignoring validation except of wrong signing method
-func (tm *TokenManager) GetClaims(accessToken string) (m.TokenData, error) {
+func (tm *TokenManager) GetClaims(accessToken string) (model.TokenData, error) {
 	var claims jwt.RegisteredClaims
 
 	_, err := jwt.ParseWithClaims(accessToken, &claims, tm.getValidateFn())
 	if err != nil && errors.Is(err, ErrInvalidSigningMethod) {
-		return m.TokenData{}, err
+		return model.TokenData{}, err
 	}
 
 	return tm.ParseClaims(claims)
 }
 
-func (tm *TokenManager) ParseClaims(claims jwt.RegisteredClaims) (m.TokenData, error) {
+func (tm *TokenManager) ParseClaims(claims jwt.RegisteredClaims) (model.TokenData, error) {
 	rawSessionID := claims.ID
 	if rawSessionID == "" {
-		return m.TokenData{}, ErrClaimsEmptySessionID
+		return model.TokenData{}, ErrClaimsEmptySessionID
 	}
 
 	sessionID, err := strconv.Atoi(rawSessionID)
 	if err != nil {
-		return m.TokenData{}, ErrClaimsInvalidSessionID
+		return model.TokenData{}, ErrClaimsInvalidSessionID
 	}
 
 	userID := claims.Subject
 	if userID == "" {
-		return m.TokenData{}, ErrClaimsEmptyUserID
+		return model.TokenData{}, ErrClaimsEmptyUserID
 	}
 
-	data := m.TokenData{
+	data := model.TokenData{
 		SessionID: sessionID,
 		UserID:    userID,
 	}

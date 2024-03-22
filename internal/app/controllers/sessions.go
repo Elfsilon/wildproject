@@ -1,12 +1,12 @@
-package ctr
+package controller
 
 import (
 	"database/sql"
 	"errors"
 	"fmt"
 	"strconv"
-	m "temp/internal/app/models"
-	rep "temp/internal/app/repositories"
+	repo "temp/internal/app/data/repositories"
+	model "temp/internal/app/domain/models"
 	tokenmanager "temp/internal/app/token-manager"
 	"time"
 
@@ -32,16 +32,16 @@ var (
 )
 
 type Sessions struct {
-	cfg *m.AuthConfig
-	r   *rep.Sessions
-	ur  *rep.Users
+	cfg *model.AuthConfig
+	r   *repo.Sessions
+	ur  *repo.Users
 	tm  *tokenmanager.TokenManager
 }
 
 func NewSessions(
-	cfg *m.AuthConfig,
-	r *rep.Sessions,
-	ur *rep.Users,
+	cfg *model.AuthConfig,
+	r *repo.Sessions,
+	ur *repo.Users,
 	tm *tokenmanager.TokenManager,
 ) *Sessions {
 	return &Sessions{cfg, r, ur, tm}
@@ -61,7 +61,7 @@ func (s *Sessions) Get(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	return c.JSON(m.ClientRefreshSession{
+	return c.JSON(model.ClientRefreshSession{
 		SessionID: session.SessionID,
 		Uagent:    session.Uagent,
 		ExpiresAt: session.ExpiresAt,
@@ -81,9 +81,9 @@ func (s *Sessions) GetAllByUserID(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	res := make([]m.ClientRefreshSession, 0)
+	res := make([]model.ClientRefreshSession, 0)
 	for _, s := range sessions {
-		res = append(res, m.ClientRefreshSession{
+		res = append(res, model.ClientRefreshSession{
 			SessionID: s.SessionID,
 			Uagent:    s.Uagent,
 			ExpiresAt: s.ExpiresAt,
@@ -92,7 +92,7 @@ func (s *Sessions) GetAllByUserID(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(struct {
-		Sessions []m.ClientRefreshSession `json:"sessions"`
+		Sessions []model.ClientRefreshSession `json:"sessions"`
 	}{
 		Sessions: res,
 	})
@@ -115,7 +115,7 @@ func (s *Sessions) generateTokens(c *fiber.Ctx, userID, uagent, fprint string) e
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	return c.JSON(m.Tokens{
+	return c.JSON(model.TokenPair{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	})
@@ -211,12 +211,12 @@ func (s *Sessions) Refresh(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, message)
 	}
 
-	oldSession, ok := c.Locals("session").(m.RefreshSession)
+	oldSession, ok := c.Locals("session").(model.RefreshSession)
 	if !ok {
 		return ErrInvalidSession
 	}
 
-	device, ok := c.Locals("device_info").(m.DeviceInfo)
+	device, ok := c.Locals("device_info").(model.DeviceInfo)
 	if !ok {
 		return ErrInvalidDevice
 	}
@@ -227,7 +227,7 @@ func (s *Sessions) Refresh(c *fiber.Ctx) error {
 		return ErrUnknownRefreshToken
 	}
 
-	expiresAt := time.Time(oldSession.ExpiresAt).UTC()
+	expiresAt := oldSession.ExpiresAt.UTC()
 	now := time.Now().UTC()
 
 	log.Infof("now: %v", now.Format(time.RFC822Z))

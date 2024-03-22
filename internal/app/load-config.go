@@ -1,12 +1,12 @@
 package app
 
 import (
-	m "temp/internal/app/models"
+	model "temp/internal/app/domain/models"
 	"temp/pkg/env"
 	"time"
 )
 
-func loadConfigFromEnv() (*m.Config, error) {
+func loadConfigFromEnv() (*model.Config, error) {
 	version := env.String("VERSION")
 	environment := env.String("ENV")
 
@@ -21,19 +21,19 @@ func loadConfigFromEnv() (*m.Config, error) {
 	accessTokenTTL := env.Int("AUTH_ACCESS_TOKEN_TTL")
 	refreshTokenTTL := env.Int("AUTH_REFRESH_TOKEN_TTL")
 
-	cfg := m.Config{
+	cfg := model.Config{
 		Version: version,
 		Env:     environment,
-		Database: m.DatabaseConfig{
+		Database: model.DatabaseConfig{
 			Conn: conn,
 		},
-		Server: m.ServerConfig{
+		Server: model.ServerConfig{
 			Addr:         addr,
 			ReadTimeout:  time.Duration(readTimeout) * time.Second,
 			WriteTimeout: time.Duration(writeTimeout) * time.Second,
 			IdleTimeout:  time.Duration(idleTimeout) * time.Second,
 		},
-		Auth: m.AuthConfig{
+		Auth: model.AuthConfig{
 			AuthJwtSecret:   []byte(authJwtSecret),
 			AccessTokenTTL:  time.Duration(accessTokenTTL) * time.Minute,
 			RefreshTokenTTL: time.Duration(refreshTokenTTL) * time.Minute,

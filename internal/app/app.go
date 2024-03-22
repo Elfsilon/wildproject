@@ -2,7 +2,7 @@ package app
 
 import (
 	db "temp/internal/app/database"
-	m "temp/internal/app/models"
+	model "temp/internal/app/domain/models"
 	"temp/internal/app/router"
 
 	"github.com/gofiber/fiber/v2"
@@ -14,7 +14,7 @@ type AppFlags struct {
 }
 
 type App struct {
-	cfg *m.Config
+	cfg *model.Config
 }
 
 func New() App {

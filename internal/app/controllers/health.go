@@ -1,14 +1,14 @@
-package ctr
+package controller
 
 import (
-	m "temp/internal/app/models"
+	model "temp/internal/app/domain/models"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func HealthCheck(c *fiber.Ctx) error {
-	r := m.Response{
-		Result: m.Status{
+	r := model.Response{
+		Result: model.Status{
 			Message: "Hi mafaka!",
 		},
 	}

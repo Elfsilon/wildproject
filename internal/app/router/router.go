@@ -3,7 +3,7 @@ package router
 import (
 	ctr "temp/internal/app/controllers"
 	db "temp/internal/app/database"
-	m "temp/internal/app/models"
+	model "temp/internal/app/domain/models"
 	rep "temp/internal/app/repositories"
 	tokenmanager "temp/internal/app/token-manager"
 
@@ -33,10 +33,10 @@ type Components struct {
 
 type Router struct {
 	app *fiber.App
-	cfg *m.Config
+	cfg *model.Config
 }
 
-func NewRouter(app *fiber.App, cfg *m.Config) Router {
+func NewRouter(app *fiber.App, cfg *model.Config) Router {
 	return Router{app, cfg}
 }
 

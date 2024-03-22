@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"strings"
-	m "temp/internal/app/models"
+	model "temp/internal/app/domain/models"
 	rep "temp/internal/app/repositories"
 	tokenmanager "temp/internal/app/token-manager"
 
@@ -80,7 +80,7 @@ func (a *AuthGuard) validateSessionAndDevice(
 	}
 
 	c.Locals("session", oldSession)
-	c.Locals("device_info", m.DeviceInfo{
+	c.Locals("device_info", model.DeviceInfo{
 		Uagent: uagent,
 		Fprint: fprint,
 	})
@@ -98,7 +98,7 @@ func (a *AuthGuard) AccessGuard(c *fiber.Ctx) error {
 
 func (a *AuthGuard) validate(
 	c *fiber.Ctx,
-	meth func(t string) (m.TokenData, error),
+	meth func(t string) (model.TokenData, error),
 ) error {
 	accessToken, err := a.retrieveToken(c)
 	if err != nil {
