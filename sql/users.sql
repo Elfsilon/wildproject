@@ -47,3 +47,18 @@ CREATE TABLE user_info (
 -- );
 
 INSERT INTO sex (label) VALUES ('Не установлен'), ('Мужской'), ('Женский');
+
+SELECT 
+  u.user_id, 
+  u.email, 
+  u.password_hash, 
+  u.created_at, 
+  u.updated_at,
+  ui.sex_id,
+  ui.name 
+FROM users AS u
+INNER JOIN user_info AS ui
+  USING(user_id)
+WHERE u.user_id = 'c0459229-883b-4600-84ff-b0eecdabfbbd';
+
+SELECT * FROM user_info;

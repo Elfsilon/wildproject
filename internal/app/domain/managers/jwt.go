@@ -1,10 +1,10 @@
-package tokenmanager
+package manager
 
 import (
 	"errors"
 	"fmt"
 	"strconv"
-	m "temp/internal/app/models"
+	model "temp/internal/app/domain/models"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -18,16 +18,19 @@ var (
 	ErrClaimsEmptyUserID      = errors.New("claims' user_id is empty")
 )
 
-type TokenManager struct {
+type JwtAccessManager struct {
 	secret []byte
 	ttl    time.Duration
 }
 
-func NewTokenManager(secret []byte, ttl time.Duration) *TokenManager {
-	return &TokenManager{secret, ttl}
+func NewJwtManager(
+	secret []byte,
+	ttl time.Duration,
+) *JwtAccessManager {
+	return &JwtAccessManager{secret, ttl}
 }
 
-func (tm *TokenManager) Generate(sessionID int, userID string) (string, error) {
+func (tm *JwtAccessManager) Generate(sessionID int, userID string) (string, error) {
 	payload := jwt.RegisteredClaims{
 		ID:        fmt.Sprint(sessionID),
 		Subject:   userID,
@@ -41,7 +44,7 @@ func (tm *TokenManager) Generate(sessionID int, userID string) (string, error) {
 	return jwtToken.SignedString(tm.secret)
 }
 
-func (tm *TokenManager) getValidateFn() func(t *jwt.Token) (interface{}, error) {
+func (tm *JwtAccessManager) getValidateFn() func(t *jwt.Token) (interface{}, error) {
 	return func(t *jwt.Token) (interface{}, error) {
 		_, ok := t.Method.(*jwt.SigningMethodHMAC)
 		if !ok {
@@ -52,46 +55,46 @@ func (tm *TokenManager) getValidateFn() func(t *jwt.Token) (interface{}, error) 
 	}
 }
 
-func (tm *TokenManager) Validate(accessToken string) (m.TokenData, error) {
+func (tm *JwtAccessManager) ParseAndValidate(accessToken string) (model.TokenPayload, error) {
 	var claims jwt.RegisteredClaims
 
 	_, err := jwt.ParseWithClaims(accessToken, &claims, tm.getValidateFn())
 	if err != nil {
-		return m.TokenData{}, err
+		return model.TokenPayload{}, err
 	}
 
-	return tm.ParseClaims(claims)
+	return tm.parseClaims(claims)
 }
 
 // Retrieves token claims ignoring validation except of wrong signing method
-func (tm *TokenManager) GetClaims(accessToken string) (m.TokenData, error) {
+func (tm *JwtAccessManager) Parse(accessToken string) (model.TokenPayload, error) {
 	var claims jwt.RegisteredClaims
 
 	_, err := jwt.ParseWithClaims(accessToken, &claims, tm.getValidateFn())
 	if err != nil && errors.Is(err, ErrInvalidSigningMethod) {
-		return m.TokenData{}, err
+		return model.TokenPayload{}, err
 	}
 
-	return tm.ParseClaims(claims)
+	return tm.parseClaims(claims)
 }
 
-func (tm *TokenManager) ParseClaims(claims jwt.RegisteredClaims) (m.TokenData, error) {
+func (tm *JwtAccessManager) parseClaims(claims jwt.RegisteredClaims) (model.TokenPayload, error) {
 	rawSessionID := claims.ID
 	if rawSessionID == "" {
-		return m.TokenData{}, ErrClaimsEmptySessionID
+		return model.TokenPayload{}, ErrClaimsEmptySessionID
 	}
 
 	sessionID, err := strconv.Atoi(rawSessionID)
 	if err != nil {
-		return m.TokenData{}, ErrClaimsInvalidSessionID
+		return model.TokenPayload{}, ErrClaimsInvalidSessionID
 	}
 
 	userID := claims.Subject
 	if userID == "" {
-		return m.TokenData{}, ErrClaimsEmptyUserID
+		return model.TokenPayload{}, ErrClaimsEmptyUserID
 	}
 
-	data := m.TokenData{
+	data := model.TokenPayload{
 		SessionID: sessionID,
 		UserID:    userID,
 	}
