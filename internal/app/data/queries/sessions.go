@@ -42,6 +42,19 @@ const (
 		WHERE session_id = $1;
 	`
 
+	FindSessionByRefreshToken = `
+		SELECT session_id, 
+			refresh_token, 
+			access_token, 
+			user_id, 
+			user_agent, 
+			fingerprint, 
+			expires_at, 
+			created_at
+		FROM refresh_sessions 
+		WHERE refresh_token = $1;
+	`
+
 	CreateSession = `
 		INSERT INTO refresh_sessions (user_id, user_agent, fingerprint, expires_at) 
 		VALUES ($1, $2, $3, $4)

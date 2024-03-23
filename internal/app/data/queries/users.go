@@ -25,7 +25,7 @@ const (
 		FROM users AS u
 		INNER JOIN user_info AS ui
 			USING(user_id)
-		WHERE u.user_id = '$1';
+		WHERE u.user_id = $1;
 	`
 
 	CountUsersByEmail = `

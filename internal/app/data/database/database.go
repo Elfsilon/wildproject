@@ -11,6 +11,7 @@ var (
 )
 
 type Database interface {
+	Instance() (Instance, error)
 	Open(conn string) error
 	Close() error
 }

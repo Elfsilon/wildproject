@@ -7,6 +7,8 @@ import (
 	entity "temp/internal/app/data/entities"
 	query "temp/internal/app/data/queries"
 	"time"
+
+	"github.com/gofiber/fiber/v2/log"
 )
 
 type Sessions struct {
@@ -77,6 +79,10 @@ func (s *Sessions) FindAllByDevice(
 		sessions = append(sessions, session)
 	}
 
+	if len(sessions) == 0 {
+		return []entity.RefreshSession{}, sql.ErrNoRows
+	}
+
 	return sessions, nil
 }
 
@@ -84,6 +90,22 @@ func (s *Sessions) FindBySessionID(sessionID int) (entity.RefreshSession, error)
 	var session entity.RefreshSession
 
 	err := s.db.QueryRow(query.FindSessionByID, sessionID).Scan(
+		&session.SessionID, &session.RefreshToken, &session.AccessToken,
+		&session.UserID, &session.Uagent, &session.Fprint, &session.ExpiresAt,
+		&session.CreatedAt,
+	)
+
+	if err != nil {
+		return entity.RefreshSession{}, err
+	}
+
+	return session, nil
+}
+
+func (s *Sessions) FindByRefreshToken(token string) (entity.RefreshSession, error) {
+	var session entity.RefreshSession
+
+	err := s.db.QueryRow(query.FindSessionByRefreshToken, token).Scan(
 		&session.SessionID, &session.RefreshToken, &session.AccessToken,
 		&session.UserID, &session.Uagent, &session.Fprint, &session.ExpiresAt,
 		&session.CreatedAt,
@@ -121,6 +143,7 @@ func (s *Sessions) SetAccessToken(sessionID int, accessToken string) error {
 }
 
 func (s *Sessions) Drop(sessionID int) error {
+	log.Info("Drop repo")
 	return s.db.QueryRow(query.DropSession, sessionID).Err()
 }
 

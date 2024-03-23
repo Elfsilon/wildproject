@@ -21,10 +21,10 @@ var (
 )
 
 type Users struct {
-	s UsersService
+	s service.UsersService
 }
 
-func NewUsers(s UsersService) *Users {
+func NewUsers(s service.UsersService) *Users {
 	return &Users{s}
 }
 

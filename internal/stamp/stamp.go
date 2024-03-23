@@ -10,7 +10,7 @@ type Stamp struct {
 }
 
 func Parse(s string) Stamp {
-	t, err := time.Parse(s, time.RFC3339)
+	t, err := time.Parse(time.RFC3339, s)
 	if err != nil {
 		return Stamp{}
 	}

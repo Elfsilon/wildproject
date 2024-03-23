@@ -1,16 +1,16 @@
 package controller
 
 import (
-	model "temp/internal/app/domain/models"
-
 	"github.com/gofiber/fiber/v2"
 )
 
+type healthResponse struct {
+	Message string `json:"message"`
+}
+
 func HealthCheck(c *fiber.Ctx) error {
-	r := model.Response{
-		Result: model.Status{
-			Message: "Hi mafaka!",
-		},
+	r := healthResponse{
+		Message: "Hi mafaka!",
 	}
 	return c.JSON(r)
 }

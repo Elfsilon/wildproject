@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	entity "temp/internal/app/data/entities"
+	repo "temp/internal/app/data/repositories"
 	model "temp/internal/app/domain/models"
 	"temp/internal/stamp"
 
@@ -11,14 +12,15 @@ import (
 )
 
 var (
-	ErrIDAndEmailEmpty = errors.New("expected user_id or email, but both are empty")
+	ErrIDAndEmailEmpty   = errors.New("expected user_id or email, but both are empty")
+	ErrPasswordsMismatch = errors.New("passwords mismatches")
 )
 
 type Users struct {
-	r UsersRepo
+	repo repo.UsersRepo
 }
 
-func NewUsers(r UsersRepo) *Users {
+func NewUsers(r repo.UsersRepo) *Users {
 	return &Users{r}
 }
 
@@ -28,9 +30,9 @@ func (u *Users) Find(userID, email string) (model.User, error) {
 	var err error
 
 	if userID != "" {
-		ent, err = u.r.FindByID(userID)
+		ent, err = u.repo.FindByID(userID)
 	} else if email != "" {
-		ent, err = u.r.FindByEmail(email)
+		ent, err = u.repo.FindByEmail(email)
 	} else {
 		return model.User{}, ErrIDAndEmailEmpty
 	}
@@ -54,7 +56,7 @@ func (u *Users) Find(userID, email string) (model.User, error) {
 }
 
 func (u *Users) FindDetailedByID(userID string) (model.UserDetailed, error) {
-	ent, err := u.r.FindDetailedByID(userID)
+	ent, err := u.repo.FindDetailedByID(userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			err = ErrNotFound
@@ -77,9 +79,8 @@ func (u *Users) FindDetailedByID(userID string) (model.UserDetailed, error) {
 	return user, nil
 }
 
-// Count
 func (u *Users) IsRegistered(email string) (bool, error) {
-	count, err := u.r.CountByEmail(email)
+	count, err := u.repo.CountByEmail(email)
 	if err != nil {
 		return true, err
 	}
@@ -87,7 +88,6 @@ func (u *Users) IsRegistered(email string) (bool, error) {
 	return count > 0, nil
 }
 
-// ...
 func (u *Users) Create(email, password string) (string, error) {
 	registered, err := u.IsRegistered(email)
 	if err != nil {
@@ -103,5 +103,25 @@ func (u *Users) Create(email, password string) (string, error) {
 		return "", err
 	}
 
-	return u.r.Create(email, string(passwordHash))
+	return u.repo.Create(email, string(passwordHash))
+}
+
+func (u *Users) Authenticate(email, password string) (string, error) {
+	user, err := u.repo.FindByEmail(email)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = ErrNotFound
+		}
+
+		return "", err
+	}
+
+	bHash := []byte(user.PasswordHash)
+	bPass := []byte(password)
+
+	if err := bcrypt.CompareHashAndPassword(bHash, bPass); err != nil {
+		return "", ErrPasswordsMismatch
+	}
+
+	return user.ID, nil
 }

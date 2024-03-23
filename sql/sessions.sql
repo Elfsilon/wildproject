@@ -21,7 +21,7 @@ SELECT * FROM refresh_sessions;
 
 INSERT INTO refresh_sessions(user_id, user_agent, fingerprint, expires_at) VALUES ();
 
-DELETE FROM refresh_sessions WHERE user_id = 'bcbbf682-d9bd-4aeb-9921-f1f14bb7e3fa';
+DELETE FROM refresh_sessions WHERE user_id = 'bcbbf682-d9bd-4aeb-9921-f1f14bb7e6fa';
 
 DELETE FROM refresh_sessions
 		WHERE session_id = 3;

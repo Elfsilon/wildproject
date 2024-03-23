@@ -1,35 +1,17 @@
 package router
 
 import (
-	ctr "temp/internal/app/controllers"
-	db "temp/internal/app/database"
+	"temp/internal/app/data/database"
+	repo "temp/internal/app/data/repositories"
+	manager "temp/internal/app/domain/managers"
 	model "temp/internal/app/domain/models"
-	rep "temp/internal/app/repositories"
-	tokenmanager "temp/internal/app/token-manager"
+	service "temp/internal/app/domain/services"
+	controller "temp/internal/app/router/controllers"
+	"temp/internal/app/router/middleware"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
 )
-
-type Repositories struct {
-	Users    *rep.Users
-	Sessions *rep.Sessions
-}
-
-type Controllers struct {
-	Users    *ctr.Users
-	Sessions *ctr.Sessions
-}
-
-type Services struct {
-	TokenManager *tokenmanager.TokenManager
-}
-
-type Components struct {
-	Repositories Repositories
-	Controllers  Controllers
-	Services     Services
-}
 
 type Router struct {
 	app *fiber.App
@@ -40,53 +22,36 @@ func NewRouter(app *fiber.App, cfg *model.Config) Router {
 	return Router{app, cfg}
 }
 
-func (r *Router) setupAppComponents(db *db.Database) (*Components, error) {
+func (r *Router) Setup(db database.Instance) error {
 	log.Info("Setting up app components")
-	s := Services{
-		TokenManager: tokenmanager.NewTokenManager(r.cfg.Auth.AuthJwtSecret, r.cfg.Auth.AccessTokenTTL),
-	}
+	tm := manager.NewJwtManager(r.cfg.Auth.AuthJwtSecret, r.cfg.Auth.AccessTokenTTL)
 
-	rp := Repositories{
-		Users:    rep.NewUsers(db.DB),
-		Sessions: rep.NewSessions(db.DB),
-	}
+	ur := repo.NewUsers(db)
+	sr := repo.NewSessions(db)
 
-	c := Controllers{
-		Users:    ctr.NewUsers(rp.Users),
-		Sessions: ctr.NewSessions(&r.cfg.Auth, rp.Sessions, rp.Users, s.TokenManager),
-	}
+	us := service.NewUsers(ur)
+	ss := service.NewSessions(&r.cfg.Auth, sr, tm)
 
-	components := &Components{
-		Repositories: rp,
-		Controllers:  c,
-		Services:     s,
-	}
+	uc := controller.NewUsers(us)
+	sc := controller.NewSessions(ss, us)
 
-	return components, nil
-}
-
-func (r *Router) Setup(db *db.Database) error {
-	c, err := r.setupAppComponents(db)
-	if err != nil {
-		return err
-	}
 	log.Info("Setting up app routes")
-	authGuard := NewAuthGuard(c.Services.TokenManager, c.Repositories.Sessions)
+	authGuard := middleware.NewAuthGuard(ss, tm)
 
 	api := r.app.Group("/api")
-	api.Get("/health", ctr.HealthCheck)
+	api.Get("/health", controller.HealthCheck)
 
 	v1 := api.Group("/v1")
 
 	// Unprotected routes
 	unUsers := v1.Group("/users")
-	unUsers.Post("/", c.Controllers.Users.Create)
+	unUsers.Post("/", uc.Create)
 
 	unUser := unUsers.Group("/:user_id<guid>")
 
 	unSessions := unUser.Group("/sessions")
-	unSessions.Post("/", c.Controllers.Sessions.New)
-	unSessions.Put("/", authGuard.RefreshGuard, c.Controllers.Sessions.Refresh)
+	unSessions.Post("/", sc.Create)
+	unSessions.Put("/", authGuard.RefreshGuard, sc.Refresh)
 
 	// Protected routes
 	protected := v1.Group("/protected", authGuard.AccessGuard)
@@ -94,15 +59,17 @@ func (r *Router) Setup(db *db.Database) error {
 	users := protected.Group("/users")
 
 	user := users.Group("/:user_id<guid>")
-	user.Get("/", c.Controllers.Users.GetInfo)
-	user.Put("/", c.Controllers.Users.Update)
-	user.Delete("/", c.Controllers.Users.Delete)
+	user.Get("/", uc.GetInfo)
+	user.Put("/", uc.Update)
+	user.Delete("/", uc.Delete)
 
 	sessions := user.Group("/sessions")
-	sessions.Get("/", c.Controllers.Sessions.GetAllByUserID)
-	sessions.Delete("/", c.Controllers.Sessions.DropAll)
-	sessions.Get("/:session_id<int>/", c.Controllers.Sessions.Get)
-	sessions.Delete("/:session_id<int>/", c.Controllers.Sessions.Drop)
+	sessions.Get("/", sc.GetAllByUserID)
+	sessions.Delete("/", sc.DropAll)
+
+	session := sessions.Group("/:session_id<int>")
+	session.Get("/", sc.GetByID)
+	session.Delete("/", sc.Drop)
 
 	return nil
 }

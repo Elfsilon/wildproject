@@ -4,13 +4,12 @@ import "temp/internal/stamp"
 
 type RefreshSession struct {
 	SessionID    int         `json:"session_id"`
+	UserID       string      `json:"user_id,omitempty"`
 	Uagent       string      `json:"user_agent"`
 	Fprint       string      `json:"fingerprint"`
-	UserID       string      `json:"user_id,omitempty"`
 	RefreshToken string      `json:"refresh_token,omitempty"`
 	AccessToken  string      `json:"access_token,omitempty"`
 	ExpiresAt    stamp.Stamp `json:"expires_at,omitempty"`
-	CreatedAt    stamp.Stamp `json:"created_at,omitempty"`
 }
 
 type ClientRefreshSession struct {
@@ -25,7 +24,7 @@ type TokenPair struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-type TokenData struct {
+type TokenPayload struct {
 	SessionID int    `json:"session_id"`
 	UserID    string `json:"usuer_id"`
 }
@@ -33,4 +32,9 @@ type TokenData struct {
 type DeviceInfo struct {
 	Uagent string `json:"user_agent"`
 	Fprint string `json:"fingerprint"`
+}
+
+type CommonRequestPayload struct {
+	TokenPayload
+	DeviceInfo
 }
