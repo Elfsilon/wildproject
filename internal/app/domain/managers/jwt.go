@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	model "temp/internal/app/domain/models"
 	"time"
+	model "wildproject/internal/app/domain/models"
 
 	"github.com/golang-jwt/jwt/v5"
 )

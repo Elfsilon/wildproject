@@ -3,12 +3,12 @@ package service
 import (
 	"database/sql"
 	"errors"
-	entity "temp/internal/app/data/entities"
-	repo "temp/internal/app/data/repositories"
-	manager "temp/internal/app/domain/managers"
-	model "temp/internal/app/domain/models"
-	"temp/internal/stamp"
 	"time"
+	entity "wildproject/internal/app/data/entities"
+	repo "wildproject/internal/app/data/repositories"
+	manager "wildproject/internal/app/domain/managers"
+	model "wildproject/internal/app/domain/models"
+	"wildproject/internal/stamp"
 
 	"github.com/gofiber/fiber/v2/log"
 )

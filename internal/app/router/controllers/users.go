@@ -2,9 +2,10 @@ package controller
 
 import (
 	"errors"
-	service "temp/internal/app/domain/services"
-	"temp/internal/app/utils"
+	service "wildproject/internal/app/domain/services"
+	"wildproject/internal/app/utils"
 
+	"github.com/gofiber/contrib/fibersentry"
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -29,6 +30,8 @@ func NewUsers(s service.UsersService) *Users {
 }
 
 func (u *Users) GetInfo(c *fiber.Ctx) error {
+	hub := fibersentry.GetHubFromContext(c)
+
 	userID := c.Params("user_id")
 	if userID == "" {
 		return ErrUserIDNotPassed
@@ -40,7 +43,8 @@ func (u *Users) GetInfo(c *fiber.Ctx) error {
 			return ErrUserNotFound
 		}
 
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		hub.CaptureException(err)
+		return err
 	}
 
 	return c.JSON(user)
@@ -56,6 +60,8 @@ type createResponse struct {
 }
 
 func (u *Users) Create(c *fiber.Ctx) error {
+	hub := fibersentry.GetHubFromContext(c)
+
 	var body createRequest
 	if err := c.BodyParser(&body); err != nil {
 		return ErrInvalidBody(err)
@@ -79,7 +85,8 @@ func (u *Users) Create(c *fiber.Ctx) error {
 			return ErrUserExists
 		}
 
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		hub.CaptureException(err)
+		return err
 	}
 
 	return c.JSON(createResponse{userID})

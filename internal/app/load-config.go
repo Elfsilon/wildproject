@@ -1,14 +1,14 @@
 package app
 
 import (
-	model "temp/internal/app/domain/models"
-	"temp/pkg/env"
 	"time"
+	model "wildproject/internal/app/domain/models"
+	"wildproject/pkg/env"
 )
 
 func loadConfigFromEnv() (*model.Config, error) {
-	version := env.String("VERSION")
 	environment := env.String("ENV")
+	projName := env.String("NAME")
 
 	conn := env.String("DATABASE_CONN_STRING")
 
@@ -21,9 +21,14 @@ func loadConfigFromEnv() (*model.Config, error) {
 	accessTokenTTL := env.Int("AUTH_ACCESS_TOKEN_TTL")
 	refreshTokenTTL := env.Int("AUTH_REFRESH_TOKEN_TTL")
 
+	sentryDsn := env.String("SENTRY_DSN")
+	sentryTSRate := env.Float64("SENTRY_TRACES_SAMPLE_RATE")
+	sentryAttachST := env.Bool("SENTRY_ATTACH_STACKTRACE")
+	sentryDebug := env.Bool("SENTRY_DEBUG")
+
 	cfg := model.Config{
-		Version: version,
-		Env:     environment,
+		Name: projName,
+		Env:  environment,
 		Database: model.DatabaseConfig{
 			Conn: conn,
 		},
@@ -37,6 +42,12 @@ func loadConfigFromEnv() (*model.Config, error) {
 			AuthJwtSecret:   []byte(authJwtSecret),
 			AccessTokenTTL:  time.Duration(accessTokenTTL) * time.Minute,
 			RefreshTokenTTL: time.Duration(refreshTokenTTL) * time.Minute,
+		},
+		Sentry: model.SentryConfig{
+			Dsn:              sentryDsn,
+			TracesSampleRate: sentryTSRate,
+			AttachStackTrace: sentryAttachST,
+			Debug:            sentryDebug,
 		},
 	}
 

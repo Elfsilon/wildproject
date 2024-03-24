@@ -3,12 +3,12 @@ package controller
 import (
 	"errors"
 	"strconv"
-	model "temp/internal/app/domain/models"
-	service "temp/internal/app/domain/services"
-	constant "temp/internal/app/router/constants"
+	model "wildproject/internal/app/domain/models"
+	service "wildproject/internal/app/domain/services"
+	constant "wildproject/internal/app/router/constants"
 
+	"github.com/gofiber/contrib/fibersentry"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/log"
 )
 
 var (
@@ -40,6 +40,8 @@ func NewSessions(
 }
 
 func (s *Sessions) GetByID(c *fiber.Ctx) error {
+	hub := fibersentry.GetHubFromContext(c)
+
 	sessionID, err := strconv.Atoi(c.Params("session_id"))
 	if err != nil {
 		return ErrInvalidSessionID
@@ -51,7 +53,8 @@ func (s *Sessions) GetByID(c *fiber.Ctx) error {
 			return ErrSessionNotFound
 		}
 
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		hub.CaptureException(err)
+		return err
 	}
 
 	return c.JSON(session)
@@ -63,6 +66,8 @@ type sessionsResponse struct {
 
 // Get all active user's refresh sessions
 func (s *Sessions) GetAllByUserID(c *fiber.Ctx) error {
+	hub := fibersentry.GetHubFromContext(c)
+
 	userID := c.Params("user_id")
 	if userID == "" {
 		return ErrUserIDNotPassed
@@ -74,7 +79,8 @@ func (s *Sessions) GetAllByUserID(c *fiber.Ctx) error {
 			return ErrSessionNotFound
 		}
 
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		hub.CaptureException(err)
+		return err
 	}
 
 	return c.JSON(sessionsResponse{sessions})
@@ -87,6 +93,8 @@ type newSessionRequest struct {
 
 // Creates new refresh session for the user if valid Authorization header is not passed
 func (s *Sessions) Create(c *fiber.Ctx) error {
+	hub := fibersentry.GetHubFromContext(c)
+
 	// TODO: Check if user already authorized
 	// h := c.Get(fiber.HeaderAuthorization)
 	// hIsValid := false
@@ -114,7 +122,8 @@ func (s *Sessions) Create(c *fiber.Ctx) error {
 			return ErrWrongEmailOrPassword
 		}
 
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		hub.CaptureException(err)
+		return err
 	}
 
 	// Check if new device is used else drop an old session
@@ -130,7 +139,8 @@ func (s *Sessions) Create(c *fiber.Ctx) error {
 
 	tokens, err := s.sSer.Create(userID, uagent, fprint)
 	if err != nil {
-		fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		hub.CaptureException(err)
+		return err
 	}
 
 	return c.JSON(tokens)
@@ -142,6 +152,8 @@ type resfreshSessionRequest struct {
 
 // Generates a new pair of resfresh + access tokens by valid refresh token
 func (s *Sessions) Refresh(c *fiber.Ctx) error {
+	hub := fibersentry.GetHubFromContext(c)
+
 	userID := c.Params("user_id")
 	if userID == "" {
 		return ErrUserIDNotPassed
@@ -174,7 +186,8 @@ func (s *Sessions) Refresh(c *fiber.Ctx) error {
 			return ErrExpiredRefreshToken
 		}
 
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		hub.CaptureException(err)
+		return err
 	}
 
 	return c.JSON(tokens)
@@ -182,14 +195,16 @@ func (s *Sessions) Refresh(c *fiber.Ctx) error {
 
 // Drops specified user's refresh session
 func (s *Sessions) Drop(c *fiber.Ctx) error {
-	log.Info("Drop controller")
+	hub := fibersentry.GetHubFromContext(c)
+
 	sessionID, err := strconv.Atoi(c.Params("session_id"))
 	if err != nil {
 		return ErrInvalidSessionID
 	}
 
 	if err := s.sSer.Drop(sessionID); err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		hub.CaptureException(err)
+		return err
 	}
 
 	return c.SendStatus(fiber.StatusOK)
@@ -197,13 +212,16 @@ func (s *Sessions) Drop(c *fiber.Ctx) error {
 
 // Drops all user's refresh sessions (equivalent to logout)
 func (s *Sessions) DropAll(c *fiber.Ctx) error {
+	hub := fibersentry.GetHubFromContext(c)
+
 	userID := c.Params("user_id")
 	if userID == "" {
 		return ErrUserIDNotPassed
 	}
 
 	if err := s.sSer.DropAll(userID, "", ""); err != nil {
-		fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		hub.CaptureException(err)
+		return err
 	}
 
 	return c.SendStatus(fiber.StatusOK)

@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"log"
-	"temp/internal/app"
-	"temp/pkg/env"
+	"wildproject/internal/app"
+	"wildproject/pkg/env"
 
 	"github.com/joho/godotenv"
 )

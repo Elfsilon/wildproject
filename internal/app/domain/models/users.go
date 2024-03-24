@@ -1,8 +1,6 @@
 package model
 
-import (
-	"temp/internal/stamp"
-)
+import "wildproject/internal/stamp"
 
 type (
 	User struct {

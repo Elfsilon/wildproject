@@ -2,30 +2,13 @@ package model
 
 import "time"
 
-type RawConfig struct {
-	Version  string `yaml:"version"`
-	Env      string `yaml:"env"`
-	Database struct {
-		Conn string `yaml:"conn_string"`
-	}
-	Server struct {
-		Addr         string `yaml:"addr"`
-		ReadTimeout  int    `yaml:"read_timeout"`
-		WriteTimeout int    `yaml:"write_timeout"`
-		IdleTimeout  int    `yaml:"idle_timeout"`
-	}
-	Auth struct {
-		AccessTokenTTL  int `yaml:"access_token_ttl"`
-		RefreshTokenTTL int `yaml:"refresh_token_ttl"`
-	}
-}
-
 type Config struct {
-	Version  string
+	Name     string
 	Env      string
 	Database DatabaseConfig
 	Server   ServerConfig
 	Auth     AuthConfig
+	Sentry   SentryConfig
 }
 
 type DatabaseConfig struct {
@@ -43,4 +26,11 @@ type AuthConfig struct {
 	AuthJwtSecret   []byte
 	AccessTokenTTL  time.Duration
 	RefreshTokenTTL time.Duration
+}
+
+type SentryConfig struct {
+	Dsn              string
+	TracesSampleRate float64
+	AttachStackTrace bool
+	Debug            bool
 }
