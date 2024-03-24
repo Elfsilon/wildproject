@@ -1,9 +1,9 @@
 package app
 
 import (
-	model "temp/internal/app/domain/models"
-	"temp/pkg/env"
 	"time"
+	model "wildproject/internal/app/domain/models"
+	"wildproject/pkg/env"
 )
 
 func loadConfigFromEnv() (*model.Config, error) {

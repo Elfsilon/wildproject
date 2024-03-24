@@ -2,8 +2,8 @@ package controller
 
 import (
 	"errors"
-	service "temp/internal/app/domain/services"
-	"temp/internal/app/utils"
+	service "wildproject/internal/app/domain/services"
+	"wildproject/internal/app/utils"
 
 	"github.com/gofiber/contrib/fibersentry"
 	"github.com/gofiber/fiber/v2"

@@ -3,9 +3,9 @@ package controller
 import (
 	"errors"
 	"strconv"
-	model "temp/internal/app/domain/models"
-	service "temp/internal/app/domain/services"
-	constant "temp/internal/app/router/constants"
+	model "wildproject/internal/app/domain/models"
+	service "wildproject/internal/app/domain/services"
+	constant "wildproject/internal/app/router/constants"
 
 	"github.com/gofiber/contrib/fibersentry"
 	"github.com/gofiber/fiber/v2"

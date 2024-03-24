@@ -1,8 +1,8 @@
 package repo
 
 import (
-	entity "temp/internal/app/data/entities"
 	"time"
+	entity "wildproject/internal/app/data/entities"
 )
 
 type SessionsRepo interface {

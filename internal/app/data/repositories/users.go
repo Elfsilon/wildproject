@@ -2,9 +2,9 @@ package repo
 
 import (
 	"errors"
-	"temp/internal/app/data/database"
-	entity "temp/internal/app/data/entities"
-	query "temp/internal/app/data/queries"
+	"wildproject/internal/app/data/database"
+	entity "wildproject/internal/app/data/entities"
+	query "wildproject/internal/app/data/queries"
 )
 
 var (

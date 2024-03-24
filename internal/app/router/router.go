@@ -1,14 +1,14 @@
 package router
 
 import (
-	"temp/internal/app/data/database"
-	repo "temp/internal/app/data/repositories"
-	manager "temp/internal/app/domain/managers"
-	model "temp/internal/app/domain/models"
-	service "temp/internal/app/domain/services"
-	controller "temp/internal/app/router/controllers"
-	"temp/internal/app/router/middleware"
 	"time"
+	"wildproject/internal/app/data/database"
+	repo "wildproject/internal/app/data/repositories"
+	manager "wildproject/internal/app/domain/managers"
+	model "wildproject/internal/app/domain/models"
+	service "wildproject/internal/app/domain/services"
+	controller "wildproject/internal/app/router/controllers"
+	"wildproject/internal/app/router/middleware"
 
 	"github.com/gofiber/contrib/fibersentry"
 	"github.com/gofiber/fiber/v2"

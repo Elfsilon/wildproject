@@ -1,10 +1,10 @@
 package app
 
 import (
-	"temp/internal/app/data/database"
-	model "temp/internal/app/domain/models"
-	"temp/internal/app/router"
 	"time"
+	"wildproject/internal/app/data/database"
+	model "wildproject/internal/app/domain/models"
+	"wildproject/internal/app/router"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/gofiber/fiber/v2"

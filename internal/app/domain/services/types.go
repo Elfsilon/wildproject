@@ -1,6 +1,6 @@
 package service
 
-import model "temp/internal/app/domain/models"
+import model "wildproject/internal/app/domain/models"
 
 type UsersService interface {
 	Find(userID, email string) (model.User, error)

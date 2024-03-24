@@ -1,6 +1,6 @@
 package model
 
-import "temp/internal/stamp"
+import "wildproject/internal/stamp"
 
 type RefreshSession struct {
 	SessionID    int         `json:"session_id"`
