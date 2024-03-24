@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	manager "temp/internal/app/domain/managers"
 	model "temp/internal/app/domain/models"
@@ -9,6 +10,8 @@ import (
 	constant "temp/internal/app/router/constants"
 	controller "temp/internal/app/router/controllers"
 
+	"github.com/getsentry/sentry-go"
+	"github.com/gofiber/contrib/fibersentry"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -42,6 +45,8 @@ func (a *AuthGuard) AccessGuard(c *fiber.Ctx) error {
 }
 
 func (a *AuthGuard) validate(c *fiber.Ctx, fn tokenValidatorFn) error {
+	hub := fibersentry.GetHubFromContext(c)
+
 	accessToken, err := a.retrieveToken(c)
 	if err != nil {
 		return err
@@ -49,6 +54,7 @@ func (a *AuthGuard) validate(c *fiber.Ctx, fn tokenValidatorFn) error {
 
 	tokenPayload, err := fn(accessToken)
 	if err != nil {
+		hub.CaptureException(err)
 		return fiber.NewError(fiber.StatusUnauthorized, err.Error())
 	}
 
@@ -68,6 +74,7 @@ func (a *AuthGuard) validate(c *fiber.Ctx, fn tokenValidatorFn) error {
 			return controller.ErrInvalidToken
 		}
 
+		hub.CaptureException(err)
 		return controller.ErrUnauthorized(err)
 	}
 
@@ -77,6 +84,17 @@ func (a *AuthGuard) validate(c *fiber.Ctx, fn tokenValidatorFn) error {
 			Uagent: uagent,
 			Fprint: fprint,
 		},
+	})
+
+	hub.Scope().SetUser(sentry.User{
+		ID: tokenPayload.UserID,
+		Data: map[string]string{
+			"session_id": fmt.Sprint(tokenPayload.SessionID),
+		},
+	})
+
+	hub.Scope().SetTags(map[string]string{
+		"User-Agent": uagent,
 	})
 
 	return c.Next()

@@ -9,8 +9,7 @@ type healthResponse struct {
 }
 
 func HealthCheck(c *fiber.Ctx) error {
-	r := healthResponse{
+	return c.JSON(healthResponse{
 		Message: "Hi mafaka!",
-	}
-	return c.JSON(r)
+	})
 }
