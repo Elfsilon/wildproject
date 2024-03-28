@@ -67,9 +67,7 @@ func (r *Router) Setup(db database.Instance) error {
 	unUsers := v1.Group("/users")
 	unUsers.Post("/", uc.Create)
 
-	unUser := unUsers.Group("/:user_id<guid>")
-
-	unSessions := unUser.Group("/sessions")
+	unSessions := v1.Group("/sessions")
 	unSessions.Post("/", sc.Create)
 	unSessions.Put("/", authGuard.RefreshGuard, sc.Refresh)
 
