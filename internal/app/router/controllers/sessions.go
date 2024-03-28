@@ -154,10 +154,11 @@ type resfreshSessionRequest struct {
 func (s *Sessions) Refresh(c *fiber.Ctx) error {
 	hub := fibersentry.GetHubFromContext(c)
 
-	userID := c.Params("user_id")
-	if userID == "" {
-		return ErrUserIDNotPassed
+	payload, ok := c.Locals(constant.LocalKeyCommon).(model.CommonRequestPayload)
+	if !ok {
+		return ErrInvalidCommonPayload
 	}
+	userID := payload.UserID
 
 	var request resfreshSessionRequest
 

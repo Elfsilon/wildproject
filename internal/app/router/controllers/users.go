@@ -15,8 +15,7 @@ var (
 	ErrPasswordTooSmall = fiber.NewError(fiber.StatusBadRequest, "password cannot be shorter 8 symbols")
 	ErrPasswordTooLong  = fiber.NewError(fiber.StatusBadRequest, "password cannot be longer 72 symbols")
 
-	ErrUserIDNotPassed = fiber.NewError(fiber.StatusNotFound, "user_id cannot be empty")
-	ErrUserNotFound    = fiber.NewError(fiber.StatusNotFound, "user not found")
+	ErrUserNotFound = fiber.NewError(fiber.StatusNotFound, "user not found")
 
 	ErrUserExists = fiber.NewError(fiber.StatusConflict, "user already exists")
 )
