@@ -12,8 +12,9 @@ type (
 
 	UserDetailed struct {
 		User
-		Name string `json:"name,omitempty"`
-		Sex  int    `json:"sex,omitempty"`
+		Name     string `json:"name,omitempty"`
+		Sex      int    `json:"sex,omitempty"`
+		ImageURL string `json:"img_url,omitempty"`
 	}
 
 	UserWithCredentials struct {

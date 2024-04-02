@@ -93,14 +93,124 @@ func (u *Users) Create(c *fiber.Ctx) error {
 	return c.JSON(createResponse{userID})
 }
 
-func (u *Users) Update(c *fiber.Ctx) error {
+type changeNameRequest struct {
+	Name string `json:"name"`
+}
+
+func (u *Users) ChangeName(c *fiber.Ctx) error {
+	var request changeNameRequest
+
+	if err := c.BodyParser(&request); err != nil {
+		return ErrInvalidBody(err)
+	}
+
+	p, ok := c.Locals(constant.LocalKeyCommon).(model.CommonRequestPayload)
+	if !ok {
+		return ErrInvalidCommonPayload
+	}
+
+	name, err := u.s.ChangeName(p.UserID, request.Name)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(changeNameRequest{
+		Name: name,
+	})
+}
+
+type changeSexRequest struct {
+	SexID int `json:"sex_id"`
+}
+
+func (u *Users) ChangeSex(c *fiber.Ctx) error {
+	var request changeSexRequest
+
+	if err := c.BodyParser(&request); err != nil {
+		return ErrInvalidBody(err)
+	}
+
+	p, ok := c.Locals(constant.LocalKeyCommon).(model.CommonRequestPayload)
+	if !ok {
+		return ErrInvalidCommonPayload
+	}
+
+	sexID, err := u.s.ChangeSex(p.UserID, request.SexID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(changeSexRequest{
+		SexID: sexID,
+	})
+}
+
+type changeEmailRequest struct {
+	Email string `json:"email"`
+}
+
+func (u *Users) ChangeEmail(c *fiber.Ctx) error {
+	var request changeEmailRequest
+
+	if err := c.BodyParser(&request); err != nil {
+		return ErrInvalidBody(err)
+	}
+
+	if !utils.IsEmailValid(request.Email) {
+		return ErrEmailNotValid
+	}
+
+	p, ok := c.Locals(constant.LocalKeyCommon).(model.CommonRequestPayload)
+	if !ok {
+		return ErrInvalidCommonPayload
+	}
+
+	email, err := u.s.ChangeEmail(p.UserID, request.Email)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(changeEmailRequest{
+		Email: email,
+	})
+}
+
+type changePasswordRequest struct {
+	Password string `json:"password"`
+}
+
+func (u *Users) ChangePassword(c *fiber.Ctx) error {
+	var request changePasswordRequest
+
+	if err := c.BodyParser(&request); err != nil {
+		return ErrInvalidBody(err)
+	}
+
+	if len(request.Password) < 8 {
+		return ErrPasswordTooSmall
+	}
+
+	p, ok := c.Locals(constant.LocalKeyCommon).(model.CommonRequestPayload)
+	if !ok {
+		return ErrInvalidCommonPayload
+	}
+
+	err := u.s.ChangePassword(p.UserID, request.Password)
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrPasswordTooLong) {
+			return ErrPasswordTooLong
+		}
+
+		return err
+	}
+
+	return c.SendStatus(fiber.StatusOK)
+}
+
+func (u *Users) ChangeImage(c *fiber.Ctx) error {
 	return fiber.ErrNotImplemented
 }
 
 func (u *Users) Delete(c *fiber.Ctx) error {
-	return fiber.ErrNotImplemented
-}
-
-func (u *Users) ChangeEmail(c *fiber.Ctx) error {
 	return fiber.ErrNotImplemented
 }

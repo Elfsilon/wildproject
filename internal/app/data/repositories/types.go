@@ -22,4 +22,9 @@ type UsersRepo interface {
 	FindDetailedByID(userID string) (entity.UserDetailed, error)
 	CountByEmail(email string) (int, error)
 	Create(email, passwordHash string) (string, error)
+	ChangeName(userID, value string) error
+	ChangeSex(userID string, value int) error
+	ChangeEmail(userID, value string) error
+	ChangePasswordHash(userID, value string) error
+	ChangeImageURL(userID, value string) error
 }

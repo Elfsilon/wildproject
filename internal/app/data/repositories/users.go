@@ -52,7 +52,7 @@ func (u *Users) FindDetailedByID(userID string) (entity.UserDetailed, error) {
 
 	err := u.db.QueryRow(query.FindDetailedUserByID, userID).Scan(
 		&user.ID, &user.Email, &user.PasswordHash, &user.CreatedAt,
-		&user.UpdatetdAt, &user.SexID, &user.Name,
+		&user.UpdatetdAt, &user.SexID, &user.Name, &user.ImageURL,
 	)
 
 	if err != nil {
@@ -92,4 +92,24 @@ func (u *Users) Create(email, passwordHash string) (string, error) {
 	}
 
 	return userID, nil
+}
+
+func (u *Users) ChangeName(userID, value string) error {
+	return u.db.QueryRow(query.UpdateUserName, value, userID).Err()
+}
+
+func (u *Users) ChangeSex(userID string, value int) error {
+	return u.db.QueryRow(query.UpdateUserSex, value, userID).Err()
+}
+
+func (u *Users) ChangeEmail(userID, value string) error {
+	return u.db.QueryRow(query.UpdateUserEmail, value, userID).Err()
+}
+
+func (u *Users) ChangePasswordHash(userID, value string) error {
+	return u.db.QueryRow(query.UpdateUserPasswordHash, value, userID).Err()
+}
+
+func (u *Users) ChangeImageURL(userID, value string) error {
+	return u.db.QueryRow(query.UpdateUserImgURL, value, userID).Err()
 }

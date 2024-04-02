@@ -8,6 +8,11 @@ type UsersService interface {
 	IsRegistered(email string) (bool, error)
 	Create(email, passwordHash string) (string, error)
 	Authenticate(email, password string) (string, error)
+	ChangeName(userID, name string) (string, error)
+	ChangeSex(userID string, sexID int) (int, error)
+	ChangeEmail(userID, email string) (string, error)
+	ChangePassword(userID, password string) error
+	ChangeImageURL(userID, url string) error
 }
 
 type SessionsService interface {

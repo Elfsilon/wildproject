@@ -71,8 +71,12 @@ func (r *Router) Setup(db database.Instance) error {
 
 	user := users.Group("/me")
 	user.Get("/", uc.GetInfo)
-	user.Put("/", uc.Update)
 	user.Delete("/", uc.Delete)
+	user.Put("/name", uc.ChangeName)
+	user.Put("/sex", uc.ChangeSex)
+	user.Put("/email", uc.ChangeEmail)
+	user.Put("/password", uc.ChangePassword)
+	user.Put("/avatar", uc.ChangeImage)
 
 	sessions := user.Group("/sessions")
 	sessions.Get("/", sc.GetAllByUserID)

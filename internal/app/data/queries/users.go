@@ -21,7 +21,8 @@ const (
 			u.created_at, 
 			u.updated_at,
 			ui.sex_id,
-			ui.name 
+			ui.name,
+			ui.img_url
 		FROM users AS u
 		INNER JOIN user_info AS ui
 			USING(user_id)
@@ -40,5 +41,39 @@ const (
 
 	CreateUserInfo = `
 		INSERT INTO user_info (user_id) VALUES ($1);
+	`
+
+	UpdateUserName = `
+		UPDATE user_info
+			SET name = $1
+		WHERE user_id = $2
+		RETURNING name;
+	`
+
+	UpdateUserImgURL = `
+		UPDATE user_info
+			SET img_url = $1
+		WHERE user_id = $2
+		RETURNING img_url;
+	`
+
+	UpdateUserEmail = `
+		UPDATE users
+			SET email = $1
+		WHERE user_id = $2
+		RETURNING email;
+	`
+
+	UpdateUserSex = `
+		UPDATE user_info
+			SET sex_id = $1
+		WHERE user_id = $2
+		RETURNING sex_id;
+	`
+
+	UpdateUserPasswordHash = `
+		UPDATE users
+			SET password_hash = $1
+		WHERE user_id = $2;
 	`
 )

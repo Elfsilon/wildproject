@@ -10,6 +10,7 @@ type User struct {
 
 type UserDetailed struct {
 	User
-	SexID int
-	Name  string
+	SexID    int
+	Name     string
+	ImageURL string
 }

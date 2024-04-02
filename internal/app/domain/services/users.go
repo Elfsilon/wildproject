@@ -11,6 +11,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const (
+	passwordCost = 12
+)
+
 var (
 	ErrIDAndEmailEmpty   = errors.New("expected user_id or email, but both are empty")
 	ErrPasswordsMismatch = errors.New("passwords mismatches")
@@ -72,8 +76,9 @@ func (u *Users) FindDetailedByID(userID string) (model.UserDetailed, error) {
 			CreatedAt: stamp.Parse(ent.CreatedAt),
 			UpdatedAt: stamp.Parse(ent.UpdatetdAt),
 		},
-		Name: ent.Name,
-		Sex:  ent.SexID,
+		Name:     ent.Name,
+		Sex:      ent.SexID,
+		ImageURL: ent.ImageURL,
 	}
 
 	return user, nil
@@ -98,7 +103,7 @@ func (u *Users) Create(email, password string) (string, error) {
 		return "", ErrAlreadyExists
 	}
 
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), passwordCost)
 	if err != nil {
 		return "", err
 	}
@@ -124,4 +129,53 @@ func (u *Users) Authenticate(email, password string) (string, error) {
 	}
 
 	return user.ID, nil
+}
+
+func (u *Users) ChangeName(userID, name string) (string, error) {
+	err := u.repo.ChangeName(userID, name)
+	if err != nil {
+		return "", err
+	}
+
+	return name, err
+}
+
+func (u *Users) ChangeSex(userID string, sexID int) (int, error) {
+	err := u.repo.ChangeSex(userID, sexID)
+	if err != nil {
+		return -1, err
+	}
+
+	return sexID, err
+}
+
+func (u *Users) ChangeEmail(userID, email string) (string, error) {
+	registered, err := u.IsRegistered(email)
+	if err != nil {
+		return "", err
+	}
+
+	if registered {
+		return "", ErrAlreadyExists
+	}
+
+	err = u.repo.ChangeEmail(userID, email)
+	if err != nil {
+		return "", err
+	}
+
+	return email, err
+}
+
+func (u *Users) ChangePassword(userID, password string) error {
+	phash, err := bcrypt.GenerateFromPassword([]byte(password), passwordCost)
+	if err != nil {
+		return err
+	}
+
+	return u.repo.ChangePasswordHash(userID, string(phash))
+}
+
+func (u *Users) ChangeImageURL(userID, url string) error {
+	return u.repo.ChangeImageURL(userID, url)
 }
