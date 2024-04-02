@@ -44,15 +44,6 @@ func (r *Router) Setup(db database.Instance) error {
 		Timeout:         10 * time.Second,
 	})
 
-	// sm := func(c *fiber.Ctx) error {
-	// 	if hub := fibersentry.GetHubFromContext(c); hub != nil {
-	// 		hub.Scope().setta()
-	// 		// Add current route, user_id, headers, session_id, ...
-	// 	}
-
-	// 	return c.Next()
-	// }
-
 	authGuard := middleware.NewAuthGuard(ss, tm)
 
 	// Setup routes
@@ -76,7 +67,7 @@ func (r *Router) Setup(db database.Instance) error {
 
 	users := protected.Group("/users")
 
-	user := users.Group("/:user_id<guid>")
+	user := users.Group("/me")
 	user.Get("/", uc.GetInfo)
 	user.Put("/", uc.Update)
 	user.Delete("/", uc.Delete)
