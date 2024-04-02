@@ -68,12 +68,12 @@ type sessionsResponse struct {
 func (s *Sessions) GetAllByUserID(c *fiber.Ctx) error {
 	hub := fibersentry.GetHubFromContext(c)
 
-	userID := c.Params("user_id")
-	if userID == "" {
-		return ErrUserIDNotPassed
+	p, ok := c.Locals(constant.LocalKeyCommon).(model.CommonRequestPayload)
+	if !ok {
+		return ErrInvalidCommonPayload
 	}
 
-	sessions, err := s.sSer.FindAll(userID, "", "")
+	sessions, err := s.sSer.FindAll(p.UserID, "", "")
 	if err != nil {
 		if errors.Is(err, service.ErrNotFound) {
 			return ErrSessionNotFound
@@ -215,12 +215,12 @@ func (s *Sessions) Drop(c *fiber.Ctx) error {
 func (s *Sessions) DropAll(c *fiber.Ctx) error {
 	hub := fibersentry.GetHubFromContext(c)
 
-	userID := c.Params("user_id")
-	if userID == "" {
-		return ErrUserIDNotPassed
+	p, ok := c.Locals(constant.LocalKeyCommon).(model.CommonRequestPayload)
+	if !ok {
+		return ErrInvalidCommonPayload
 	}
 
-	if err := s.sSer.DropAll(userID, "", ""); err != nil {
+	if err := s.sSer.DropAll(p.UserID, "", ""); err != nil {
 		hub.CaptureException(err)
 		return err
 	}

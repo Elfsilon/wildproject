@@ -7,8 +7,6 @@ import (
 	"wildproject/internal/app/data/database"
 	entity "wildproject/internal/app/data/entities"
 	query "wildproject/internal/app/data/queries"
-
-	"github.com/gofiber/fiber/v2/log"
 )
 
 type Sessions struct {
@@ -143,7 +141,6 @@ func (s *Sessions) SetAccessToken(sessionID int, accessToken string) error {
 }
 
 func (s *Sessions) Drop(sessionID int) error {
-	log.Info("Drop repo")
 	return s.db.QueryRow(query.DropSession, sessionID).Err()
 }
 

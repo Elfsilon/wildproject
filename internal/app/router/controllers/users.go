@@ -2,7 +2,9 @@ package controller
 
 import (
 	"errors"
+	model "wildproject/internal/app/domain/models"
 	service "wildproject/internal/app/domain/services"
+	constant "wildproject/internal/app/router/constants"
 	"wildproject/internal/app/utils"
 
 	"github.com/gofiber/contrib/fibersentry"
@@ -31,12 +33,12 @@ func NewUsers(s service.UsersService) *Users {
 func (u *Users) GetInfo(c *fiber.Ctx) error {
 	hub := fibersentry.GetHubFromContext(c)
 
-	userID := c.Params("user_id")
-	if userID == "" {
-		return ErrUserIDNotPassed
+	p, ok := c.Locals(constant.LocalKeyCommon).(model.CommonRequestPayload)
+	if !ok {
+		return ErrInvalidCommonPayload
 	}
 
-	user, err := u.s.FindDetailedByID(userID)
+	user, err := u.s.FindDetailedByID(p.UserID)
 	if err != nil {
 		if errors.Is(err, service.ErrNotFound) {
 			return ErrUserNotFound
