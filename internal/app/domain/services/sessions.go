@@ -113,12 +113,6 @@ func (s *Sessions) Refresh(token, userID, uagent, fprint string) (model.TokenPai
 	expiresAt := stamp.Parse(session.ExpiresAt).UTC()
 	now := time.Now().UTC()
 
-	log.Infof("Expires at: %v", expiresAt)
-	log.Infof("Expires at: %v", expiresAt.Format(time.RFC1123Z))
-	log.Infof("now: %v", now)
-	log.Infof("now: %v", now.Format(time.RFC1123Z))
-	log.Infof("expired? = %v", now.After(expiresAt))
-
 	if now.After(expiresAt) {
 		return model.TokenPair{}, ErrExpiredToken
 	}

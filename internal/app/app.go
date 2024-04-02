@@ -55,7 +55,7 @@ func (a *App) LoadConfig(f *AppFlags) {
 
 	cfg, err := loadConfigFromEnv()
 	if err != nil {
-		log.Fatalf("unable to load app config %s", err)
+		log.Errorf("unable to load app config %s", err)
 	}
 
 	a.cfg = cfg
@@ -85,12 +85,12 @@ func (a *App) InitDatabase(conn string) (database.Instance, func()) {
 
 	pg := database.NewPostgres()
 	if err := pg.Open(conn); err != nil {
-		log.Fatalf("open database error: %s", err)
+		log.Errorf("open database error: %s", err)
 	}
 
 	instance, err := pg.Instance()
 	if err != nil {
-		log.Fatalf("get database instance error: %s", err)
+		log.Errorf("get database instance error: %s", err)
 	}
 
 	return instance, func() {
